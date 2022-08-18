@@ -6,7 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Signup from './src/screens/Signup';
 import CameraScr from './src/screens/CameraScr';
 import Map from './src/screens/Map';
-
+import { AuthProvider } from './src/screens/Auth';
 
 
 
@@ -20,6 +20,7 @@ const App = ()=>{
         <Stack.Screen options={{headerShown: false}} name="Signup" component={Signup} />
         <Stack.Screen options={{headerShown: false}} name="CameraScr" component={CameraScr} />
         <Stack.Screen options={{headerShown: false}} name="Map" component={Map} />
+        <Stack.Screen options={{headerShown: false}} name="AuthProvider" component={AuthProvider} />
       </Stack.Navigator>
     </NavigationContainer>
 

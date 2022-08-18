@@ -13,7 +13,7 @@ import * as Location from 'expo-location';
 import MapView, { Circle, Marker } from 'react-native-maps';
 import {Entypo} from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-
+//import RNFetchBlob from 'react-native-fetch-blob';
 
 
 const CameraScr =({navigation})=> {
@@ -193,6 +193,25 @@ const CameraScr =({navigation})=> {
     text = JSON.stringify(location);
   }
 
+  const uploadimag = async () => {
+    let payload = new FormData();
+    payload.append('video', {
+      uri: video.uri,
+      type: video.type,
+      name: video.fileName
+    })
+
+    let config = {
+      body: payload,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    };
+
+    let response = await fetch('http://192.168.1.17/my-app/api/upload.php', config);
+    console.log(response);
+  }
   
 
 
@@ -211,6 +230,9 @@ const CameraScr =({navigation})=> {
         onPress={recording ? stoppRecording : startRecording} icon='controller-record' color='black' />
       {getRecordingLines()}
         <Button title="Share" icon='share' onPress={shareVideo} color='black'/>
+        
+        <Button title="Upload" onPress={uploadimag} color='black'/>
+
         {hasMediaLibraryPermission ? <Button title="Save" icon='save' onPress={saveVideo} color='black' /> : undefined}
         <Button title="back" icon='back'  onPress={() => setVideo(undefined)} color='black' />
 
@@ -246,6 +268,8 @@ const CameraScr =({navigation})=> {
 
     let newPhoto = await cameraRef.current.takePictureAsync(options);
     setPhoto(newPhoto);
+
+    return await uploadPhotoo(photo);
   };
 
   
@@ -271,28 +295,50 @@ const CameraScr =({navigation})=> {
     text = errorMsg;
   } else if (location) {
     text = JSON.stringify(location);
-  }
+  };
+
+  const createFormData = (photo, body) => {
+    const data = new FormData();
+  
+    data.append('photo', {
+      name: photo.fileName,
+      type: photo.type,
+      uri:
+        Platform.OS === 'android' ? photo.uri : photo.uri.replace('file://', ''),
+    });
+  
+    Object.keys(body).forEach((key) => {
+      data.append(key, body[key]);
+    });
+  
+    return data;
+  };
 
   const uploadimag = async () => {
-
-    const payload = new FormData();
-    payload.append('image', {
-      uri: photo.uri,
-      type: photo.type,
-      name: photo.fileName
+    fetch('http://localhost:3000/src/screens/api/index.php', {
+    method: 'POST',
+    body: createFormData(photo, { userId: '123' }),
+    headers: {
+      'Content-Type': 'multipart/form-data;  ',
+    }
+  })
+    .then((response) => response.json())
+    .then((response) => {
+      console.log('upload succes', response);
+      alert('Upload success!');
+      this.setState({ photo: null });
     })
+    .catch((error) => {
+      console.log('upload error', error);
+      alert('Upload failed!');
+    });
+  };
 
-    const config = {
-      body: payload,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    };
 
-    let response = await fetch('http://192.168.1.17:8080/uploads/upload.php', config);
-    console.log(response);
-  }
+
+  
+
+
 
     return (
       <SafeAreaView style={styles.container}>
@@ -306,7 +352,7 @@ const CameraScr =({navigation})=> {
 
         <Button title="Share" icon='share' onPress={sharePic} color='black' />
 
-        <Button title="Upload" onPress={uploadimag}></Button>
+        <Button title="Upload" onPress={uploadimag} color='black'/>
 
         {hasMediaLibraryPermission ? <Button title="Save" icon='save' onPress={savePhoto} color='black' /> : undefined}
         <Button title="back" icon='back' onPress={() => setPhoto(undefined)} color='black' />
@@ -325,28 +371,23 @@ const CameraScr =({navigation})=> {
 
   return (
     <View style={styles.container}>
-    <Camera style={styles.camera} ref={cameraRef} type={type} flashMode={flash}>
+   <Camera style={styles.camera} ref={cameraRef} type={type} flashMode={flash}>
       <View style={{ flexDirection:'row', justifyContent: 'space-between', padding: 30, }}>
-        <TouchableOpacity icon={'flash'} color={flash === Camera.Constants.FlashMode.off ? 'gray' : 'black'}
-        onPress={() =>{
-          setFlash(flash === Camera.Constants.FlashMode.off
-            ? Camera.Constants.FlashMode.on
-            : Camera.Constants.FlashMode.off)
+      <TouchableOpacity  icon='retweet' onPress={() =>{
+        setType(type === CameraType.back ? CameraType.front : CameraType.back )
+        }} color='black'>
+<Entypo name="retweet" size={24} color="black" />
+      </TouchableOpacity>
 
-        } }><Entypo name="retweet" size={24} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity icon={'flash'} color={flash === Camera.Constants.FlashMode.off ? 'gray' : 'black'}
-        onPress={() =>{
+      <TouchableOpacity  icon='flash'  color={flash === Camera.Constants.FlashMode.off ? 'gray' : 'black'} onPress={() =>{
           setFlash(flash === Camera.Constants.FlashMode.off
             ? Camera.Constants.FlashMode.on
             : Camera.Constants.FlashMode.off)
 
         } } >
 <Entypo name="flash" size={24} color="black" />
-        </TouchableOpacity>
+      </TouchableOpacity>
         
-        
-
       </View>
       </Camera>
      
@@ -359,7 +400,7 @@ const CameraScr =({navigation})=> {
       <View >
       <TouchableOpacity style={styles.loginBtn} title={isRecording ? "Stop Recording" : "Record Video"}  icon='video-camera' onPress={isRecording ? stopRecording : recordVideo}>
       <Ionicons name="ios-videocam" size={25} color="white" />
-      <Text style={styles.loginText}>Take Video</Text>
+      <Text style={styles.loginText}>Record Video</Text>
         </TouchableOpacity>
       </View>
       <StatusBar style="auto" />
